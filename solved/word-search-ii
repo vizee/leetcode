@@ -1,0 +1,111 @@
+const NIL: usize = 0;
+const ROOT: usize = 1;
+
+#[derive(Debug)]
+struct Node {
+    next: [usize; 26],
+    end: usize,
+}
+
+impl Node {
+    fn new() -> Node {
+        Node { next: [NIL; 26], end: 0 }
+    }
+}
+
+struct Trie {
+    all: Vec<Node>,
+}
+
+impl Trie {
+    fn new() -> Trie {
+        let mut v = Vec::new();
+        v.push(Node::new());
+        v.push(Node::new());
+        Trie { all: v }
+    }
+
+    fn add(&mut self, s: &[u8], id: usize) {
+        let mut p = ROOT;
+        for &c in s {
+            let next = self.all[p].next[(c - b'a') as usize];
+            if next == NIL {
+                let next = self.all.len();
+                self.all.push(Node::new());
+                self.all[p].next[(c - b'a') as usize] = next;
+                p = next;
+            } else {
+                p = next;
+            }
+        }
+        self.all[p].end = id;
+    }
+}
+
+const MOVE: [[i32; 2]; 4] = [[0, 1], [0, -1], [1, 0], [-1, 0]];
+
+struct Context {
+    visit: Vec<bool>,
+    n: i32,
+    m: i32,
+    board: Vec<Vec<char>>,
+    dict: Trie,
+    out: Vec<usize>,
+}
+
+impl Context {
+    fn find_words(&mut self, p: usize, i: usize, j: usize) {
+        if self.dict.all[p].end != 0 {
+            self.out.push(self.dict.all[p].end);
+            self.dict.all[p].end = 0;
+        }
+        self.visit[i * self.m as usize + j] = true;
+        for mov in MOVE.iter() {
+            let x = i as i32 + mov[0];
+            let y = j as i32 + mov[1];
+            if x >= 0 && x < self.n && y >= 0 && y < self.m {
+                let x = x as usize;
+                let y = y as usize;
+                if self.visit[x * self.m as usize + y] {
+                    continue;
+                }
+                let p = self.dict.all[p].next[(self.board[x][y] as u8 - b'a') as usize];
+                if p != NIL {
+                    self.find_words(p, x, y);
+                }
+            }
+        }
+        self.visit[i * self.m as usize + j] = false;
+    }
+}
+
+impl Solution {
+    pub fn find_words(board: Vec<Vec<char>>, words: Vec<String>) -> Vec<String> {
+        let mut dict = Trie::new();
+        for (i, w) in words.iter().enumerate() {
+            dict.add(w.as_bytes(), i + 1);
+        }
+        let n = board.len();
+        let m = board[0].len();
+        let mut visit = Vec::new();
+        visit.resize(n * m, false);
+        let mut ctx = Context {
+            dict,
+            n: n as i32,
+            m: m as i32,
+            board,
+            visit,
+            out: Vec::new(),
+        };
+        for i in 0..n {
+            for j in 0..m {
+                let p = ctx.dict.all[ROOT].next[(ctx.board[i][j] as u8 - b'a') as usize];
+                if p == NIL {
+                    continue;
+                }
+                ctx.find_words(p, i, j);
+            }
+        }
+        ctx.out.iter().map(|&i| words[i - 1].clone()).collect()
+    }
+}
