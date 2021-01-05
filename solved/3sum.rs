@@ -1,29 +1,38 @@
 impl Solution {
-    pub fn three_sum(nums: Vec<i32>) -> Vec<Vec<i32>> {
+    pub fn three_sum(mut nums: Vec<i32>) -> Vec<Vec<i32>> {
         if nums.len() < 3 {
             return Vec::new();
         }
-        let mut nums = nums;
         nums.sort();
-        let mut v = Vec::new();
-        let mut i = 0;
-        while i < nums.len() - 2 {
-            let a = nums[i];
+        let mut res = Vec::new();
+        let mut a = nums[0] - 1;
+        for i in 0..nums.len() - 2 {
+            if nums[i] > 0 {
+                break;
+            }
+            if nums[i] == a {
+                continue;
+            }
+            a = nums[i];
             let mut j = i + 1;
-            while j < nums.len() - 1 {
-                let b = nums[j];
-                let c = 0 - a - b;
-                if nums[j + 1..].binary_search(&c).is_ok() {
-                    v.push(vec![a, b, c]);
+            let mut k = nums.len() - 1;
+            let mut last = -1;
+            while j < k {
+                if a + nums[j] > 0 {
+                    break;
                 }
-                while j < nums.len() - 1 && nums[j] == b {
+                let x = a + nums[j] + nums[k];
+                if last != 0 && x == 0 {
+                    res.push(vec![a, nums[j], nums[k]]);
+                }
+                last = x;
+                if x > 0 {
+                    k -= 1
+                } else {
                     j += 1;
                 }
             }
-            while i < nums.len() - 2 && nums[i] == a {
-                i += 1;
-            }
         }
-        v
+        res
     }
 }
